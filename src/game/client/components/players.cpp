@@ -953,6 +953,23 @@ void CPlayers::OnRender()
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
+	if(g_Config.m_ClDrawlines)
+	{
+		const int TargetId = GameClient()->m_Controls.GetAimbotTarget();
+		if(TargetId >= 0)
+		{
+			const vec2 TargetPosition(
+				GameClient()->m_Snap.m_aCharacters[TargetId].m_Cur.m_X,
+				GameClient()->m_Snap.m_aCharacters[TargetId].m_Cur.m_Y);
+			Graphics()->TextureClear();
+			Graphics()->LinesBegin();
+			Graphics()->SetColor(ColorRGBA(1.0f, 0.2f, 0.2f, 0.8f));
+			const IGraphics::CLineItem Line(GameClient()->m_LocalCharacterPos.x, GameClient()->m_LocalCharacterPos.y, TargetPosition.x, TargetPosition.y);
+			Graphics()->LinesDraw(&Line, 1);
+			Graphics()->LinesEnd();
+		}
+	}
+
 	// update render info for ninja
 	CTeeRenderInfo aRenderInfo[MAX_CLIENTS];
 	const bool IsTeamPlay = GameClient()->IsTeamPlay();

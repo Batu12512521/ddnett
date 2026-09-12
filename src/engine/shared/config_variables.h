@@ -26,6 +26,9 @@ MACRO_CONFIG_INT(ClAntiPingGunfire, cl_antiping_gunfire, 1, 0, 1, CFGFLAG_CLIENT
 MACRO_CONFIG_INT(ClAntiPingPreInput, cl_antiping_preinput, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predict other players using preinputs for more accurate input prediction")
 MACRO_CONFIG_INT(ClPredictionMargin, cl_prediction_margin, 10, 1, 300, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Prediction margin in ms (adds latency, can reduce lag from ping jumps)")
 MACRO_CONFIG_INT(ClSubTickAiming, cl_sub_tick_aiming, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send aiming data at sub-tick accuracy")
+MACRO_CONFIG_INT(ClAimbot, cl_aimbot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Aim at the nearest player within the configured field of view")
+MACRO_CONFIG_INT(ClAimbotFov, cl_aimbot_fov, 90, 0, 360, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Aimbot field of view in degrees")
+MACRO_CONFIG_INT(ClDrawlines, cl_drawlines, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draw a line to the selected aimbot target")
 #if defined(CONF_PLATFORM_ANDROID)
 MACRO_CONFIG_INT(ClTouchControls, cl_touch_controls, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable ingame touch controls")
 #else

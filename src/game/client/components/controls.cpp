@@ -20,6 +20,8 @@
 #include <game/collision.h>
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 CControls::CControls()
 {
@@ -28,6 +30,44 @@ CControls::CControls()
 	std::fill(std::begin(m_aMousePosOnAction), std::end(m_aMousePosOnAction), vec2(0.0f, 0.0f));
 	std::fill(std::begin(m_aTargetPos), std::end(m_aTargetPos), vec2(0.0f, 0.0f));
 	std::fill(std::begin(m_aMouseInputType), std::end(m_aMouseInputType), EMouseInputType::ABSOLUTE);
+}
+
+int CControls::GetAimbotTarget() const
+{
+	if(!g_Config.m_ClAimbot || GameClient()->m_Snap.m_LocalClientId < 0 ||
+		GameClient()->m_Snap.m_SpecInfo.m_Active || !GameClient()->m_Snap.m_pLocalCharacter)
+		return -1;
+
+	const vec2 RawAimDirection = m_aMousePos[g_Config.m_ClDummy];
+	const vec2 AimDirection = length(RawAimDirection) > 0.0f ? normalize(RawAimDirection) : vec2(1.0f, 0.0f);
+	const float MaxAngle = g_Config.m_ClAimbotFov * pi / 360.0f;
+	int TargetId = -1;
+	float ClosestDistance = std::numeric_limits<float>::max();
+
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
+	{
+		if(ClientId == GameClient()->m_Snap.m_LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
+			continue;
+
+		const vec2 TargetPosition(
+			GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_X,
+			GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y);
+		const vec2 ToTarget = TargetPosition - GameClient()->m_LocalCharacterPos;
+		const float Distance = length(ToTarget);
+		if(Distance <= 0.0f)
+			continue;
+
+		const vec2 TargetDirection = normalize(ToTarget);
+		const float Cross = AimDirection.x * TargetDirection.y - AimDirection.y * TargetDirection.x;
+		const float Angle = std::abs(std::atan2(Cross, dot(AimDirection, TargetDirection)));
+		if(Angle <= MaxAngle && Distance < ClosestDistance)
+		{
+			TargetId = ClientId;
+			ClosestDistance = Distance;
+		}
+	}
+
+	return TargetId;
 }
 
 void CControls::OnReset()
@@ -246,6 +286,17 @@ int CControls::SnapInput(int *pData)
 			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePosOnAction[g_Config.m_ClDummy].x;
 			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePosOnAction[g_Config.m_ClDummy].y;
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
+		}
+
+		const int AimbotTarget = GetAimbotTarget();
+		if(AimbotTarget >= 0)
+		{
+			const vec2 TargetPosition(
+				GameClient()->m_Snap.m_aCharacters[AimbotTarget].m_Cur.m_X,
+				GameClient()->m_Snap.m_aCharacters[AimbotTarget].m_Cur.m_Y);
+			m_aMousePos[g_Config.m_ClDummy] = TargetPosition - GameClient()->m_LocalCharacterPos;
+			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
+			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
 		}
 
 		if(!m_aInputData[g_Config.m_ClDummy].m_TargetX && !m_aInputData[g_Config.m_ClDummy].m_TargetY)

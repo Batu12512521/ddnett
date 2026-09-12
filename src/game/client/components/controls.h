@@ -17,6 +17,7 @@ class CControls : public CComponent
 public:
 	float GetMinMouseDistance() const;
 	float GetMaxMouseDistance() const;
+	int GetAimbotTarget() const;
 
 	enum class EMouseInputType
 	{
