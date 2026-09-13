@@ -422,7 +422,7 @@ void CPlayers::RenderHookCollLine(
 		return;
 	ColorRGBA HookCollTipColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollTipColor, true));
 
-	Graphics()->TextureClear();
+						Graphics()->TextureClear();
 	if(HookCollSize > 0)
 	{
 		std::vector<IGraphics::CFreeformItem> vLineQuadSegments;
@@ -961,6 +961,7 @@ void CPlayers::OnRender()
 			const vec2 TargetPosition(
 				GameClient()->m_Snap.m_aCharacters[TargetId].m_Cur.m_X,
 				GameClient()->m_Snap.m_aCharacters[TargetId].m_Cur.m_Y);
+			Graphics()->MapScreen(Graphics()->GetScreen());
 			Graphics()->TextureClear();
 			Graphics()->LinesBegin();
 			Graphics()->SetColor(ColorRGBA(1.0f, 0.2f, 0.2f, 0.8f));

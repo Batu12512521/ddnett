@@ -34,8 +34,11 @@ CControls::CControls()
 
 int CControls::GetAimbotTarget() const
 {
-	if(!g_Config.m_ClAimbot || GameClient()->m_Snap.m_LocalClientId < 0 ||
+	if((!g_Config.m_ClAimbot && !g_Config.m_ClDrawlines) || GameClient()->m_Snap.m_LocalClientId < 0 ||
 		GameClient()->m_Snap.m_SpecInfo.m_Active || !GameClient()->m_Snap.m_pLocalCharacter)
+		return -1;
+
+	if(g_Config.m_ClAimbot && !g_Config.m_ClDrawlines && !m_RightMouseDown)
 		return -1;
 
 	const vec2 RawAimDirection = m_aMousePos[g_Config.m_ClDummy];
@@ -70,8 +73,28 @@ int CControls::GetAimbotTarget() const
 	return TargetId;
 }
 
+bool CControls::OnInput(const IInput::CEvent &Event)
+{
+	if(Event.m_Key == KEY_MOUSE_2)
+	{
+		if(Event.m_Flags & IInput::FLAG_PRESS)
+		{
+			m_AimbotPreviousMousePos = m_aMousePos[g_Config.m_ClDummy];
+			m_RightMouseDown = true;
+		}
+		if(Event.m_Flags & IInput::FLAG_RELEASE)
+		{
+			m_RightMouseDown = false;
+			m_aMousePos[g_Config.m_ClDummy] = m_AimbotPreviousMousePos;
+		}
+	}
+
+	return false;
+}
+
 void CControls::OnReset()
 {
+	m_RightMouseDown = false;
 	ResetInput(0);
 	ResetInput(1);
 
@@ -288,7 +311,7 @@ int CControls::SnapInput(int *pData)
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
 		}
 
-		const int AimbotTarget = GetAimbotTarget();
+				const int AimbotTarget = m_RightMouseDown && g_Config.m_ClAimbot ? GetAimbotTarget() : -1;
 		if(AimbotTarget >= 0)
 		{
 			const vec2 TargetPosition(
