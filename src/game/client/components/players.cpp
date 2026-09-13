@@ -957,27 +957,22 @@ void CPlayers::OnRender()
 
 	if(g_Config.m_ClDrawlines)
 	{
-		const vec2 AimDirection = normalize(GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy]);
+		const vec2 MousePosition = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		const vec2 AimDirection = length(MousePosition) > 0.0f ? normalize(MousePosition) : vec2(1.0f, 0.0f);
 		const float HalfFov = g_Config.m_ClAimbotFov * pi / 360.0f;
 		const float AimAngle = angle(AimDirection);
-		constexpr int FovSegments = 48;
-		IGraphics::CLineItem aFovLines[FovSegments];
-		const float FovRadius = 320.0f;
-
-		for(int i = 0; i < FovSegments; ++i)
-		{
-			const float StartAngle = AimAngle - HalfFov + 2.0f * HalfFov * i / FovSegments;
-			const float EndAngle = AimAngle - HalfFov + 2.0f * HalfFov * (i + 1) / FovSegments;
-			const vec2 Start = GameClient()->m_LocalCharacterPos + vec2(std::cos(StartAngle), std::sin(StartAngle)) * FovRadius;
-			const vec2 End = GameClient()->m_LocalCharacterPos + vec2(std::cos(EndAngle), std::sin(EndAngle)) * FovRadius;
-			aFovLines[i] = IGraphics::CLineItem(Start.x, Start.y, End.x, End.y);
-		}
+		constexpr float FovRadius = 2000.0f;
+		const vec2 FovStart = GameClient()->m_LocalCharacterPos + vec2(std::cos(AimAngle - HalfFov), std::sin(AimAngle - HalfFov)) * FovRadius;
+		const vec2 FovEnd = GameClient()->m_LocalCharacterPos + vec2(std::cos(AimAngle + HalfFov), std::sin(AimAngle + HalfFov)) * FovRadius;
+		const IGraphics::CLineItem aFovLines[] = {
+			IGraphics::CLineItem(GameClient()->m_LocalCharacterPos.x, GameClient()->m_LocalCharacterPos.y, FovStart.x, FovStart.y),
+			IGraphics::CLineItem(GameClient()->m_LocalCharacterPos.x, GameClient()->m_LocalCharacterPos.y, FovEnd.x, FovEnd.y)};
 
 		Graphics()->MapScreen(Graphics()->GetScreen());
 		Graphics()->TextureClear();
 		Graphics()->LinesBegin();
 		Graphics()->SetColor(ColorRGBA(1.0f, 0.2f, 0.2f, 0.8f));
-		Graphics()->LinesDraw(aFovLines, FovSegments);
+		Graphics()->LinesDraw(aFovLines, 2);
 		Graphics()->LinesEnd();
 	}
 
