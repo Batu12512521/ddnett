@@ -32,7 +32,7 @@ CControls::CControls()
 	std::fill(std::begin(m_aMouseInputType), std::end(m_aMouseInputType), EMouseInputType::ABSOLUTE);
 }
 
-int CControls::GetAimbotTarget() const
+int CControls::GetAimbotTarget(bool HookOnly) const
 {
 	if((!g_Config.m_ClAimbot && !g_Config.m_ClDrawlines) || GameClient()->m_Snap.m_LocalClientId < 0 ||
 		GameClient()->m_Snap.m_SpecInfo.m_Active || !GameClient()->m_Snap.m_pLocalCharacter)
@@ -47,6 +47,9 @@ int CControls::GetAimbotTarget() const
 	int TargetId = -1;
 	float ClosestDistance = std::numeric_limits<float>::max();
 
+	const float HookLength = GameClient()->m_aTuning[g_Config.m_ClDummy].m_HookLength;
+	const vec2 HookOffsets[] = {vec2(0.0f, 0.0f), vec2(-14.0f, 0.0f), vec2(14.0f, 0.0f), vec2(0.0f, -14.0f), vec2(0.0f, 14.0f)};
+
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
 		if(ClientId == GameClient()->m_Snap.m_LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
@@ -55,8 +58,28 @@ int CControls::GetAimbotTarget() const
 		const vec2 TargetPosition = GetAimbotTargetPosition(ClientId);
 		const vec2 ToTarget = TargetPosition - GameClient()->m_LocalCharacterPos;
 		const float Distance = length(ToTarget);
-		if(Distance <= 0.0f)
+		if(Distance <= 0.0f || (HookOnly && Distance > HookLength))
 			continue;
+
+		if(HookOnly)
+		{
+			bool Visible = false;
+			for(const vec2 Offset : HookOffsets)
+			{
+				const vec2 Candidate = TargetPosition + Offset;
+				if(length(Candidate - GameClient()->m_LocalCharacterPos) > HookLength)
+					continue;
+
+				vec2 CollisionPos;
+				if(!Collision()->IntersectLineTeleHook(GameClient()->m_LocalCharacterPos, Candidate, &CollisionPos, nullptr))
+				{
+					Visible = true;
+					break;
+				}
+			}
+			if(!Visible)
+				continue;
+		}
 
 		const vec2 TargetDirection = normalize(ToTarget);
 		const float Cross = AimDirection.x * TargetDirection.y - AimDirection.y * TargetDirection.x;
@@ -312,7 +335,7 @@ int CControls::SnapInput(int *pData)
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
 		}
 
-		const int AimbotTarget = m_RightMouseDown && g_Config.m_ClAimbot ? GetAimbotTarget() : -1;
+		const int AimbotTarget = m_RightMouseDown && g_Config.m_ClAimbot ? GetAimbotTarget(m_aInputData[g_Config.m_ClDummy].m_Hook != 0) : -1;
 		if(AimbotTarget >= 0)
 		{
 			const vec2 TargetDirection = GetAimbotTargetPosition(AimbotTarget) - GameClient()->m_LocalCharacterPos;
