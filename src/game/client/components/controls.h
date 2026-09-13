@@ -18,6 +18,7 @@ public:
 	float GetMinMouseDistance() const;
 	float GetMaxMouseDistance() const;
 	int GetAimbotTarget() const;
+	vec2 GetAimbotTargetPosition(int ClientId) const;
 
 	enum class EMouseInputType
 	{
@@ -41,7 +42,6 @@ public:
 	int m_aInputDirectionRight[NUM_DUMMIES];
 	int m_aShowHookColl[NUM_DUMMIES];
 	bool m_RightMouseDown = false;
-	vec2 m_AimbotPreviousMousePos;
 
 	CControls();
 	int Sizeof() const override { return sizeof(*this); }

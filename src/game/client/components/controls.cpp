@@ -52,9 +52,7 @@ int CControls::GetAimbotTarget() const
 		if(ClientId == GameClient()->m_Snap.m_LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
 			continue;
 
-		const vec2 TargetPosition(
-			GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_X,
-			GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y);
+		const vec2 TargetPosition = GetAimbotTargetPosition(ClientId);
 		const vec2 ToTarget = TargetPosition - GameClient()->m_LocalCharacterPos;
 		const float Distance = length(ToTarget);
 		if(Distance <= 0.0f)
@@ -73,20 +71,23 @@ int CControls::GetAimbotTarget() const
 	return TargetId;
 }
 
+vec2 CControls::GetAimbotTargetPosition(int ClientId) const
+{
+	const CNetObj_Character &Character = GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
+	const float PredictionTime = 0.15f;
+	return vec2(Character.m_X, Character.m_Y) + vec2(Character.m_VelX, Character.m_VelY) / 256.0f * Client()->GameTickSpeed() * PredictionTime;
+}
+
 bool CControls::OnInput(const IInput::CEvent &Event)
 {
 	if(Event.m_Key == KEY_MOUSE_2)
 	{
 		if(Event.m_Flags & IInput::FLAG_PRESS)
 		{
-			m_AimbotPreviousMousePos = m_aMousePos[g_Config.m_ClDummy];
 			m_RightMouseDown = true;
 		}
 		if(Event.m_Flags & IInput::FLAG_RELEASE)
-		{
 			m_RightMouseDown = false;
-			m_aMousePos[g_Config.m_ClDummy] = m_AimbotPreviousMousePos;
-		}
 	}
 
 	return false;
@@ -311,15 +312,12 @@ int CControls::SnapInput(int *pData)
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
 		}
 
-				const int AimbotTarget = m_RightMouseDown && g_Config.m_ClAimbot ? GetAimbotTarget() : -1;
+		const int AimbotTarget = m_RightMouseDown && g_Config.m_ClAimbot ? GetAimbotTarget() : -1;
 		if(AimbotTarget >= 0)
 		{
-			const vec2 TargetPosition(
-				GameClient()->m_Snap.m_aCharacters[AimbotTarget].m_Cur.m_X,
-				GameClient()->m_Snap.m_aCharacters[AimbotTarget].m_Cur.m_Y);
-			m_aMousePos[g_Config.m_ClDummy] = TargetPosition - GameClient()->m_LocalCharacterPos;
-			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
-			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
+			const vec2 TargetDirection = GetAimbotTargetPosition(AimbotTarget) - GameClient()->m_LocalCharacterPos;
+			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)TargetDirection.x;
+			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)TargetDirection.y;
 		}
 
 		if(!m_aInputData[g_Config.m_ClDummy].m_TargetX && !m_aInputData[g_Config.m_ClDummy].m_TargetY)
