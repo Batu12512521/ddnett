@@ -219,7 +219,7 @@ protected:
 	char m_aPopupMessage[IO_MAX_PATH_LENGTH + 256];
 	struct
 	{
-		char m_aLabel[64];a
+		char m_aLabel[64];
 		int m_NextPopup;
 		FPopupButtonCallback m_pfnCallback;
 	} m_aPopupButtons[NUM_BUTTONS];
