@@ -45,6 +45,7 @@ int CControls::GetAimbotTarget(bool HookOnly) const
 	const vec2 AimDirection = length(RawAimDirection) > 0.0f ? normalize(RawAimDirection) : vec2(1.0f, 0.0f);
 	const float MaxAngle = g_Config.m_ClAimbotFov * pi / 360.0f;
 	int TargetId = -1;
+	float BestAngle = std::numeric_limits<float>::max();
 	float ClosestDistance = std::numeric_limits<float>::max();
 
 	const float HookLength = GameClient()->m_aTuning[g_Config.m_ClDummy].m_HookLength;
@@ -84,9 +85,14 @@ int CControls::GetAimbotTarget(bool HookOnly) const
 		const vec2 TargetDirection = normalize(ToTarget);
 		const float Cross = AimDirection.x * TargetDirection.y - AimDirection.y * TargetDirection.x;
 		const float Angle = std::abs(std::atan2(Cross, dot(AimDirection, TargetDirection)));
-		if(Angle <= MaxAngle && Distance < ClosestDistance)
+		const float TargetRadius = 14.0f;
+		const float AngularRadius = std::asin(std::min(TargetRadius / Distance, 1.0f));
+		const float TargetAngle = std::max(Angle - AngularRadius, 0.0f);
+		if(Angle <= MaxAngle + AngularRadius &&
+			(TargetAngle < BestAngle || (TargetAngle == BestAngle && Distance < ClosestDistance)))
 		{
 			TargetId = ClientId;
+			BestAngle = TargetAngle;
 			ClosestDistance = Distance;
 		}
 	}
@@ -99,6 +105,40 @@ vec2 CControls::GetAimbotTargetPosition(int ClientId) const
 	const CNetObj_Character &Character = GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
 	const float PredictionTime = 0.15f;
 	return vec2(Character.m_X, Character.m_Y) + vec2(Character.m_VelX, Character.m_VelY) / 256.0f * Client()->GameTickSpeed() * PredictionTime;
+}
+
+vec2 CControls::GetAimbotAimPosition(int ClientId) const
+{
+	const vec2 TargetPosition = GetAimbotTargetPosition(ClientId);
+	const vec2 ToTarget = TargetPosition - GameClient()->m_LocalCharacterPos;
+	const float Distance = length(ToTarget);
+	if(Distance <= 0.0f)
+		return TargetPosition;
+
+	const vec2 TargetDirection = normalize(ToTarget);
+	const vec2 Perpendicular(-TargetDirection.y, TargetDirection.x);
+	const float TargetRadius = 14.0f;
+	const vec2 Candidates[] = {
+		TargetPosition,
+		TargetPosition + Perpendicular * TargetRadius,
+		TargetPosition - Perpendicular * TargetRadius};
+
+	vec2 BestPosition = TargetPosition;
+	float BestAngle = std::numeric_limits<float>::max();
+	const vec2 RawAimDirection = m_aMousePos[g_Config.m_ClDummy];
+	const vec2 AimDirection = length(RawAimDirection) > 0.0f ? normalize(RawAimDirection) : vec2(1.0f, 0.0f);
+	for(const vec2 Candidate : Candidates)
+	{
+		const vec2 Direction = normalize(Candidate - GameClient()->m_LocalCharacterPos);
+		const float Cross = AimDirection.x * Direction.y - AimDirection.y * Direction.x;
+		const float CandidateAngle = std::abs(std::atan2(Cross, dot(AimDirection, Direction)));
+		if(CandidateAngle < BestAngle)
+		{
+			BestAngle = CandidateAngle;
+			BestPosition = Candidate;
+		}
+	}
+	return BestPosition;
 }
 
 bool CControls::OnInput(const IInput::CEvent &Event)
@@ -338,7 +378,7 @@ int CControls::SnapInput(int *pData)
 		const int AimbotTarget = m_RightMouseDown && g_Config.m_ClAimbot ? GetAimbotTarget(m_aInputData[g_Config.m_ClDummy].m_Hook != 0) : -1;
 		if(AimbotTarget >= 0)
 		{
-			const vec2 TargetDirection = GetAimbotTargetPosition(AimbotTarget) - GameClient()->m_LocalCharacterPos;
+			const vec2 TargetDirection = GetAimbotAimPosition(AimbotTarget) - GameClient()->m_LocalCharacterPos;
 			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)TargetDirection.x;
 			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)TargetDirection.y;
 		}

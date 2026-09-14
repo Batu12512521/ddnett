@@ -26,6 +26,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 {
 	// render background
 	CUIRect Button, TabBar, RestartBar;
+	if(g_Config.m_UiSettingsPage >= SETTINGS_LENGTH)
+		g_Config.m_UiSettingsPage = SETTINGS_CHEATS;
 	MainView.VSplitRight(120.0f, &MainView, &TabBar);
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 	MainView.Margin(20.0f, &MainView);
@@ -50,9 +52,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Graphics"),
 		Localize("Sound"),
 		Localize("DDNet"),
-		Localize("Cheats"),
 		Localize("Assets"),
-		Localize("Credits")};
+		Localize("Cheats")};
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 
 	for(int i = 0; i < SETTINGS_LENGTH; i++)
@@ -111,20 +112,15 @@ void CMenus::RenderSettings(CUIRect MainView)
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
 		RenderSettingsDDNet(MainView);
 	}
-	else if(g_Config.m_UiSettingsPage == SETTINGS_CHEATS)
-	{
-		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
-		RenderSettingsCheats(MainView);
-	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_ASSETS)
 	{
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ASSETS);
 		RenderSettingsAssets(MainView);
 	}
-	else if(g_Config.m_UiSettingsPage == SETTINGS_CREDITS)
+	else if(g_Config.m_UiSettingsPage == SETTINGS_CHEATS)
 	{
-		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_CREDITS);
-		RenderSettingsCredits(MainView);
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_DDNET);
+		RenderSettingsCheats(MainView);
 	}
 	else
 	{

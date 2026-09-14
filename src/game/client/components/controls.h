@@ -19,6 +19,7 @@ public:
 	float GetMaxMouseDistance() const;
 	int GetAimbotTarget(bool HookOnly = false) const;
 	vec2 GetAimbotTargetPosition(int ClientId) const;
+	vec2 GetAimbotAimPosition(int ClientId) const;
 
 	enum class EMouseInputType
 	{
